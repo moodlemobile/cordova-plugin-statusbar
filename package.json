@@ -1,17 +1,17 @@
 {
-  "name": "cordova-plugin-statusbar",
-  "version": "4.0.0-dev",
-  "description": "Cordova StatusBar Plugin",
+  "name": "@moodlehq/cordova-plugin-statusbar",
+  "version": "4.0.0-moodle.1",
+  "description": "Fork of Cordova StatusBar Plugin",
   "types": "./types/index.d.ts",
   "cordova": {
-    "id": "cordova-plugin-statusbar",
+    "id": "@moodlehq/cordova-plugin-statusbar",
     "platforms": [
       "android",
       "ios"
     ]
   },
-  "repository": "github:apache/cordova-plugin-statusbar",
-  "bugs": "https://github.com/apache/cordova-plugin-statusbar/issues",
+  "repository": "github:moodlemobile/cordova-plugin-statusbar",
+  "bugs": "https://github.com/moodlemobile/cordova-plugin-statusbar/issues",
   "keywords": [
     "cordova",
     "statusbar",

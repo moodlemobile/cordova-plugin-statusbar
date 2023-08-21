@@ -1,5 +1,5 @@
 // Type definitions for cordova-plugin-statusbar
-// Project: https://github.com/apache/cordova-plugin-statusbar
+// Project: https://github.com/moodlemobile/cordova-plugin-statusbar
 // Definitions by: Xinkai Chen <https://github.com/Xinkai>
 //                 Tim Brust <https://github.com/timbru31>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
@@ -18,7 +18,7 @@ interface Window {
 interface StatusBar {
     /**
     * On iOS 7, make the statusbar overlay or not overlay the WebView.
-    * 
+    *
     * @param isOverlay - On iOS 7, set to false to make the statusbar appear like iOS 6.
     *                    Set the style and background color to suit using the other functions.
     */
