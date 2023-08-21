@@ -147,7 +147,7 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
     } else {
         self.webView.scrollView.scrollsToTop = NO;
     }
- 
+
     // blank scroll view to intercept status bar taps
     UIScrollView *fakeScrollView = [[UIScrollView alloc] initWithFrame:UIScreen.mainScreen.bounds];
     fakeScrollView.delegate = self;
@@ -328,6 +328,12 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
 
     _statusBarBackgroundColor = [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:1.0];
     _statusBarBackgroundView.backgroundColor = _statusBarBackgroundColor;
+
+    if ([self isLightModeNeeded:_statusBarBackgroundColor]) {
+        [self styleLightContent:nil];
+    } else {
+        [self styleDefault:nil];
+    }
 }
 
 - (void) backgroundColorByHexString:(CDVInvokedUrlCommand*)command
@@ -342,6 +348,16 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
     }
 
     [self _backgroundColorByHexString:value];
+}
+
+- (bool) isLightModeNeeded:(UIColor*)color
+{
+    // Solution extracted from https://stackoverflow.com/questions/2509443/check-if-uicolor-is-dark-or-bright
+    const CGFloat *componentColors = CGColorGetComponents(color.CGColor);
+
+    CGFloat colorBrightness = ((componentColors[0] * 299) + (componentColors[1] * 587) + (componentColors[2] * 114)) / 1000;
+
+    return colorBrightness < 0.5;
 }
 
 - (void) hideStatusBar
@@ -453,7 +469,7 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
     }
     frame.size.height -= frame.origin.y;
     self.webView.frame = frame;
-    
+
 }
 
 - (void) dealloc
