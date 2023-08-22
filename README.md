@@ -8,7 +8,7 @@ We created this fork because we needed to include the following modifications in
 
 | PR | Description |
 | -- | ----------- |
-| - | Automatically calcualate status bar color based on background color |
+| - | Automatically calculate status bar color based on background color |
 | - | Allow changing Android's bottom navigation bar color |
 
 ## Installation

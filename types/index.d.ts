@@ -53,6 +53,13 @@ interface StatusBar {
     backgroundColorByHexString(color: string): void;
 
     /**
+    * Sets the background color of the navigationbar by a hex string.
+    *
+    * @param color - CSS shorthand properties are also supported.
+    */
+    navigationBackgroundColorByHexString(color: string): void;
+
+    /**
     * Hide the statusbar.
     */
     hide(): void;

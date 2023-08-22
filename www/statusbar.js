@@ -74,6 +74,19 @@ var StatusBar = {
         exec(null, null, 'StatusBar', 'backgroundColorByHexString', [hexString]);
     },
 
+    navigationBackgroundColorByHexString: function (hexString) {
+        if (hexString.charAt(0) !== '#') {
+            hexString = '#' + hexString;
+        }
+
+        if (hexString.length === 4) {
+            var split = hexString.split('');
+            hexString = '#' + split[1] + split[1] + split[2] + split[2] + split[3] + split[3];
+        }
+
+        exec(null, null, 'StatusBar', 'navigationBackgroundColorByHexString', [hexString]);
+    },
+
     hide: function () {
         exec(null, null, 'StatusBar', 'hide', []);
         StatusBar.isVisible = false;

@@ -45,6 +45,7 @@ public class StatusBar extends CordovaPlugin {
     private static final String ACTION_SHOW = "show";
     private static final String ACTION_READY = "_ready";
     private static final String ACTION_BACKGROUND_COLOR_BY_HEX_STRING = "backgroundColorByHexString";
+    private static final String ACTION_NAVIGATION_BACKGROUND_COLOR_BY_HEX_STRING = "navigationBackgroundColorByHexString";
     private static final String ACTION_OVERLAYS_WEB_VIEW = "overlaysWebView";
     private static final String ACTION_STYLE_DEFAULT = "styleDefault";
     private static final String ACTION_STYLE_LIGHT_CONTENT = "styleLightContent";
@@ -80,6 +81,9 @@ public class StatusBar extends CordovaPlugin {
 
             // Read 'StatusBarBackgroundColor' from config.xml, default is #000000.
             setStatusBarBackgroundColor(preferences.getString("StatusBarBackgroundColor", "#000000"));
+
+            // Read 'NavigationBarBackgroundColor' from config.xml, default is #000000.
+            setNavigationBarBackgroundColor(preferences.getString("NavigationBarBackgroundColor", "#000000"));
 
             // Read 'StatusBarStyle' from config.xml, default is 'lightcontent'.
             // setStatusBarStyle(
@@ -138,6 +142,16 @@ public class StatusBar extends CordovaPlugin {
                 activity.runOnUiThread(() -> {
                     try {
                         setStatusBarBackgroundColor(args.getString(0));
+                    } catch (JSONException ignore) {
+                        LOG.e(TAG, "Invalid hexString argument, use f.i. '#777777'");
+                    }
+                });
+                return true;
+
+            case ACTION_NAVIGATION_BACKGROUND_COLOR_BY_HEX_STRING:
+                activity.runOnUiThread(() -> {
+                    try {
+                        setNavigationBarBackgroundColor(args.getString(0));
                     } catch (JSONException ignore) {
                         LOG.e(TAG, "Invalid hexString argument, use f.i. '#777777'");
                     }
@@ -209,7 +223,7 @@ public class StatusBar extends CordovaPlugin {
     }
 
     private void setStatusBarStyle(final String style) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || style.isEmpty()) return; // SDK 26
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || style.isEmpty()) return;
 
         View decorView = window.getDecorView();
         WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
@@ -229,5 +243,32 @@ public class StatusBar extends CordovaPlugin {
 
     private boolean isLightModeNeeded(int color) {
         return Color.luminance(color) < 0.5;
+    }
+
+    private void setNavigationBarBackgroundColor(final String colorPref) {
+        if (colorPref.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return; // SDK 26
+
+        int color;
+        try {
+            color = Color.parseColor(colorPref);
+        } catch (IllegalArgumentException ignore) {
+            LOG.e(TAG, "Invalid hexString argument, use f.i. '#999999'");
+            return;
+        }
+
+        window.setNavigationBarColor(color);
+
+        final boolean useLightForeground = isLightModeNeeded(color);
+
+        LOG.d(TAG, "Setting navigation bar color to " + colorPref + " foreground " + (useLightForeground ? "light" : "dark"));
+
+        final View decorView = window.getDecorView();
+        WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+
+        if (windowInsetsControllerCompat == null) {
+            return;
+        }
+
+        windowInsetsControllerCompat.setAppearanceLightNavigationBars(!useLightForeground);
     }
 }
