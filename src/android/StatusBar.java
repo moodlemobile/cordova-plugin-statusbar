@@ -82,9 +82,9 @@ public class StatusBar extends CordovaPlugin {
             setStatusBarBackgroundColor(preferences.getString("StatusBarBackgroundColor", "#000000"));
 
             // Read 'StatusBarStyle' from config.xml, default is 'lightcontent'.
-            setStatusBarStyle(
-                preferences.getString("StatusBarStyle", STYLE_LIGHT_CONTENT).toLowerCase()
-            );
+            // setStatusBarStyle(
+            //     preferences.getString("StatusBarStyle", STYLE_LIGHT_CONTENT).toLowerCase()
+            // );
         });
     }
 
@@ -178,9 +178,21 @@ public class StatusBar extends CordovaPlugin {
             return;
         }
 
+        // Decide foreground depending on background.
+        final boolean useLightForeground = isLightModeNeeded(color);
+
+        LOG.d(TAG, "Setting status bar color to " + colorPref + " foreground " + (useLightForeground ? "light" : "dark"));
+
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS); // SDK 19-30
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // SDK 21
         window.setStatusBarColor(color);
+
+        if (useLightForeground) {
+            setStatusBarStyle(STYLE_LIGHT_CONTENT);
+        } else {
+            setStatusBarStyle(STYLE_DEFAULT);
+        }
+
     }
 
     private void setStatusBarTransparent(final boolean isTransparent) {
@@ -197,17 +209,25 @@ public class StatusBar extends CordovaPlugin {
     }
 
     private void setStatusBarStyle(final String style) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !style.isEmpty()) {
-            View decorView = window.getDecorView();
-            WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || style.isEmpty()) return; // SDK 26
 
-            if (style.equals(STYLE_DEFAULT)) {
-                windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
-            } else if (style.equals(STYLE_LIGHT_CONTENT)) {
-                windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
-            } else {
-                LOG.e(TAG, "Invalid style, must be either 'default' or 'lightcontent'");
-            }
+        View decorView = window.getDecorView();
+        WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+
+        if (windowInsetsControllerCompat == null) {
+            return;
         }
+
+        if (style.equals(STYLE_DEFAULT)) {
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
+        } else if (style.equals(STYLE_LIGHT_CONTENT)) {
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
+        } else {
+            LOG.e(TAG, "Invalid style, must be either 'default' or 'lightcontent'");
+        }
+    }
+
+    private boolean isLightModeNeeded(int color) {
+        return Color.luminance(color) < 0.5;
     }
 }
