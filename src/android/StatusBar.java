@@ -45,6 +45,7 @@ public class StatusBar extends CordovaPlugin {
     private static final String ACTION_SHOW = "show";
     private static final String ACTION_READY = "_ready";
     private static final String ACTION_BACKGROUND_COLOR_BY_HEX_STRING = "backgroundColorByHexString";
+    private static final String ACTION_NAVIGATION_BACKGROUND_COLOR_BY_HEX_STRING = "navigationBackgroundColorByHexString";
     private static final String ACTION_OVERLAYS_WEB_VIEW = "overlaysWebView";
     private static final String ACTION_STYLE_DEFAULT = "styleDefault";
     private static final String ACTION_STYLE_LIGHT_CONTENT = "styleLightContent";
@@ -81,10 +82,13 @@ public class StatusBar extends CordovaPlugin {
             // Read 'StatusBarBackgroundColor' from config.xml, default is #000000.
             setStatusBarBackgroundColor(preferences.getString("StatusBarBackgroundColor", "#000000"));
 
+            // Read 'NavigationBarBackgroundColor' from config.xml, default is #000000.
+            setNavigationBarBackgroundColor(preferences.getString("NavigationBarBackgroundColor", "#000000"));
+
             // Read 'StatusBarStyle' from config.xml, default is 'lightcontent'.
-            setStatusBarStyle(
-                preferences.getString("StatusBarStyle", STYLE_LIGHT_CONTENT).toLowerCase()
-            );
+            // setStatusBarStyle(
+            //     preferences.getString("StatusBarStyle", STYLE_LIGHT_CONTENT).toLowerCase()
+            // );
         });
     }
 
@@ -144,6 +148,16 @@ public class StatusBar extends CordovaPlugin {
                 });
                 return true;
 
+            case ACTION_NAVIGATION_BACKGROUND_COLOR_BY_HEX_STRING:
+                activity.runOnUiThread(() -> {
+                    try {
+                        setNavigationBarBackgroundColor(args.getString(0));
+                    } catch (JSONException ignore) {
+                        LOG.e(TAG, "Invalid hexString argument, use f.i. '#777777'");
+                    }
+                });
+                return true;
+
             case ACTION_OVERLAYS_WEB_VIEW:
                 activity.runOnUiThread(() -> {
                     try {
@@ -178,9 +192,21 @@ public class StatusBar extends CordovaPlugin {
             return;
         }
 
+        // Decide foreground depending on background.
+        final boolean useLightForeground = isLightModeNeeded(color);
+
+        LOG.d(TAG, "Setting status bar color to " + colorPref + " foreground " + (useLightForeground ? "light" : "dark"));
+
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS); // SDK 19-30
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // SDK 21
         window.setStatusBarColor(color);
+
+        if (useLightForeground) {
+            setStatusBarStyle(STYLE_LIGHT_CONTENT);
+        } else {
+            setStatusBarStyle(STYLE_DEFAULT);
+        }
+
     }
 
     private void setStatusBarTransparent(final boolean isTransparent) {
@@ -197,17 +223,52 @@ public class StatusBar extends CordovaPlugin {
     }
 
     private void setStatusBarStyle(final String style) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !style.isEmpty()) {
-            View decorView = window.getDecorView();
-            WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || style.isEmpty()) return;
 
-            if (style.equals(STYLE_DEFAULT)) {
-                windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
-            } else if (style.equals(STYLE_LIGHT_CONTENT)) {
-                windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
-            } else {
-                LOG.e(TAG, "Invalid style, must be either 'default' or 'lightcontent'");
-            }
+        View decorView = window.getDecorView();
+        WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+
+        if (windowInsetsControllerCompat == null) {
+            return;
         }
+
+        if (style.equals(STYLE_DEFAULT)) {
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
+        } else if (style.equals(STYLE_LIGHT_CONTENT)) {
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
+        } else {
+            LOG.e(TAG, "Invalid style, must be either 'default' or 'lightcontent'");
+        }
+    }
+
+    private boolean isLightModeNeeded(int color) {
+        return Color.luminance(color) < 0.5;
+    }
+
+    private void setNavigationBarBackgroundColor(final String colorPref) {
+        if (colorPref.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return; // SDK 26
+
+        int color;
+        try {
+            color = Color.parseColor(colorPref);
+        } catch (IllegalArgumentException ignore) {
+            LOG.e(TAG, "Invalid hexString argument, use f.i. '#999999'");
+            return;
+        }
+
+        window.setNavigationBarColor(color);
+
+        final boolean useLightForeground = isLightModeNeeded(color);
+
+        LOG.d(TAG, "Setting navigation bar color to " + colorPref + " foreground " + (useLightForeground ? "light" : "dark"));
+
+        final View decorView = window.getDecorView();
+        WindowInsetsControllerCompat windowInsetsControllerCompat = WindowCompat.getInsetsController(window, decorView);
+
+        if (windowInsetsControllerCompat == null) {
+            return;
+        }
+
+        windowInsetsControllerCompat.setAppearanceLightNavigationBars(!useLightForeground);
     }
 }
