@@ -182,7 +182,7 @@ public class StatusBar extends CordovaPlugin {
     }
 
     private void setStatusBarBackgroundColor(final String colorPref) {
-        if (colorPref.isEmpty()) return;
+        if (colorPref.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return; // SDK 24
 
         int color;
         try {
