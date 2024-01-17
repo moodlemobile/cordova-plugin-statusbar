@@ -16,5 +16,5 @@ We created this fork because we needed to include the following modifications in
 You can install this package using the [original installation instructions](https://github.com/apache/cordova-plugin-statusbar#installation), but installing this package instead:
 
 ```sh
-cordova plugin add @moodlehq/cordova-plugin-statusbar@4.0.0-moodle.2
+cordova plugin add @moodlehq/cordova-plugin-statusbar@4.0.0-moodle.3
 ```
