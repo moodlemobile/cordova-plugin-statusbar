@@ -77,6 +77,15 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
 
 @implementation CDVStatusBar
 
+- (UIScrollView*)webViewScrollView
+{
+    if (![self.webView respondsToSelector:@selector(scrollView)]) {
+        return nil;
+    }
+
+    return (UIScrollView*)[self.webView performSelector:@selector(scrollView)];
+}
+
 - (id)settingForKey:(NSString*)key
 {
     return [self.commandDelegate.settings objectForKey:[key lowercaseString]];
@@ -142,10 +151,11 @@ static const void *kStatusBarStyle = &kStatusBarStyle;
     }
 
     setting  = @"StatusBarDefaultScrollToTop";
+    UIScrollView* scrollView = [self webViewScrollView];
     if ([self settingForKey:setting]) {
-        self.webView.scrollView.scrollsToTop = [(NSNumber*)[self settingForKey:setting] boolValue];
+        scrollView.scrollsToTop = [(NSNumber*)[self settingForKey:setting] boolValue];
     } else {
-        self.webView.scrollView.scrollsToTop = NO;
+        scrollView.scrollsToTop = NO;
     }
 
     // blank scroll view to intercept status bar taps
