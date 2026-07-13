@@ -12,6 +12,7 @@ We created this fork because we needed to include the following modifications in
 | - | Allow changing Android's bottom navigation bar color |
 | https://github.com/moodlemobile/cordova-plugin-statusbar/pull/3 | Colors can no longer be changed in Android 15+, in that case the backgroundColorByHexString and the navigationBackgroundColorByHexString actions will only calculate the right text color based on the preferred background color. |
 | - | Update code for Cordova iOS 8 |
+| - | Reapply colors after some Android events to prevent cordova-android 15 resetting the status bar colors. |
 
 
 ## Installation
@@ -19,5 +20,5 @@ We created this fork because we needed to include the following modifications in
 You can install this package using the [original installation instructions](https://github.com/apache/cordova-plugin-statusbar#installation), but installing this package instead:
 
 ```sh
-cordova plugin add @moodlehq/cordova-plugin-statusbar@4.0.0-moodle.6
+cordova plugin add @moodlehq/cordova-plugin-statusbar@4.0.0-moodle.7
 ```
