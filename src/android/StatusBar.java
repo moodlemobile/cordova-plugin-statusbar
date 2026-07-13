@@ -19,6 +19,7 @@
  */
 package org.apache.cordova.statusbar;
 
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
@@ -42,6 +43,7 @@ import org.json.JSONException;
 
 public class StatusBar extends CordovaPlugin {
     private static final String TAG = "StatusBar";
+    private static final String MESSAGE_UPDATE_SYSTEM_BARS = "updateSystemBars";
 
     private static final String ACTION_HIDE = "hide";
     private static final String ACTION_SHOW = "show";
@@ -54,6 +56,7 @@ public class StatusBar extends CordovaPlugin {
     private Window window;
 
     private int currentStatusBarColor;
+    private Integer runtimeStatusBarColorOverride = null;
 
     /**
      * Sets the context of the Command. This can then be used to do things like
@@ -81,11 +84,40 @@ public class StatusBar extends CordovaPlugin {
             this.setOverlaysWebView(preferences.getBoolean("StatusBarOverlaysWebView", true));
 
             // Read 'StatusBarBackgroundColor' from config.xml, default is #000000.
-            this.setStatusBarBackgroundColor(preferences.getString("StatusBarBackgroundColor", "#000000"));
+            this.setStatusBarBackgroundColor(preferences.getString("StatusBarBackgroundColor", "#000000"), false);
 
             // Read 'NavigationBarBackgroundColor' from config.xml, default is #000000.
             this.setNavigationBarBackgroundColor(preferences.getString("NavigationBarBackgroundColor", "#000000"));
         });
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        activity.runOnUiThread(() -> {
+            this.reapplyStatusBarColorIfOverridden();
+        });
+    }
+
+    @Override
+    public void onResume(boolean multitasking) {
+        super.onResume(multitasking);
+
+        activity.runOnUiThread(() -> {
+            this.reapplyStatusBarColorIfOverridden();
+        });
+    }
+
+    @Override
+    public Object onMessage(String id, Object data) {
+        if (MESSAGE_UPDATE_SYSTEM_BARS.equals(id)) {
+            activity.runOnUiThread(() -> {
+                this.reapplyStatusBarColorIfOverridden();
+            });
+        }
+
+        return null;
     }
 
     /**
@@ -122,7 +154,7 @@ public class StatusBar extends CordovaPlugin {
             case ACTION_BACKGROUND_COLOR_BY_HEX_STRING:
                 activity.runOnUiThread(() -> {
                     try {
-                        this.setStatusBarBackgroundColor(args.getString(0));
+                        this.setStatusBarBackgroundColor(args.getString(0), true);
                     } catch (JSONException ignore) {
                         LOG.e(TAG, "Invalid hexString argument, use f.i. '#777777'");
                     }
@@ -154,7 +186,7 @@ public class StatusBar extends CordovaPlugin {
         }
     }
 
-    private void setStatusBarBackgroundColor(final String colorPref) {
+    private void setStatusBarBackgroundColor(final String colorPref, boolean runtimeOverride) {
         if (colorPref.isEmpty()) return;
 
         int color;
@@ -165,10 +197,18 @@ public class StatusBar extends CordovaPlugin {
             return;
         }
 
+        if (runtimeOverride) {
+            this.runtimeStatusBarColorOverride = color;
+        }
+
+        this.applyStatusBarColor(color);
+    }
+
+    private void applyStatusBarColor(int color) {
         // Decide foreground depending on background.
         final boolean lightTextNeeded = this.isLightTextNeeded(color);
 
-        LOG.d(TAG, "Setting status bar color to " + colorPref + " foreground " + (lightTextNeeded ? "light" : "dark"));
+        LOG.d(TAG, "Setting status bar color to " + color + ", text " + (lightTextNeeded ? "light" : "dark"));
 
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS); // SDK 19-30
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // SDK 21
@@ -183,6 +223,14 @@ public class StatusBar extends CordovaPlugin {
         }
 
         winInsetsController.setAppearanceLightStatusBars(!lightTextNeeded);
+    }
+
+    private void reapplyStatusBarColorIfOverridden() {
+        if (this.runtimeStatusBarColorOverride == null) {
+            return;
+        }
+
+        this.applyStatusBarColor(this.runtimeStatusBarColorOverride);
     }
 
     @SuppressWarnings("deprecation")
@@ -232,7 +280,7 @@ public class StatusBar extends CordovaPlugin {
 
         final boolean lightTextNeeded = this.isLightTextNeeded(color);
 
-        LOG.d(TAG, "Setting navigation bar color to " + colorPref + " foreground " + (lightTextNeeded ? "light" : "dark"));
+        LOG.d(TAG, "Setting navigation bar color to " + colorPref + ", text " + (lightTextNeeded ? "light" : "dark"));
 
         WindowInsetsControllerCompat winInsetsController = this.getInsetsController();
         if (winInsetsController == null) {
